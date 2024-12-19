@@ -1,6 +1,6 @@
 # Search and Learn
 
-> One thing that should be learned from [the bitter lesson](http://www.incompleteideas.net/IncIdeas/BitterLesson.html) is the great power of general purpose methods, of methods that continue to scale with increased computation even as the available computation becomes very great. The two methods that seem to scale arbitrarily in this way are _**search**_ and _**learning**_.
+> One thing that should be learned from [the bitter lesson](https://www.cs.utexas.edu/~eunsol/courses/data/bitter_lesson.pdf) is the great power of general purpose methods, of methods that continue to scale with increased computation even as the available computation becomes very great. The two methods that seem to scale arbitrarily in this way are _**search**_ and _**learning**_.
 
 # Installation
 
