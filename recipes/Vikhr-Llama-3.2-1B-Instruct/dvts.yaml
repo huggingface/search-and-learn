@@ -1,0 +1,12 @@
+# refer to src/sal/config.py for more options
+
+model_path: Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct
+dataset_name: evilfreelancer/MATH-500-Russian
+system_prompt: "Решите следующую математическую задачу эффективно и понятно:\n\n- Для простых задач (2 шага или меньше):\nПредоставьте краткое решение с минимальными пояснениями.\n\n- Для сложных задач (3 шага и более):\nИспользуйте следующий пошаговый формат:\n\n## Step 1: [Краткое описание]\n[Короткое объяснение и вычисления]\n\n## Step 2: [Краткое описание]\n[Короткое объяснение и вычисления]\n\n...\n\nНезависимо от подхода, всегда заключайте решение следующим:\n\nTherefore, the final answer is: $\\boxed{answer}$. I hope it is correct.\n\nГде [answer] — это просто конечное число или выражение, решающее задачу."
+
+approach: dvts
+n: 16
+search_batch_size: 25
+dataset_start: 0
+dataset_end: 10
+seed: 42

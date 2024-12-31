@@ -21,6 +21,7 @@ from transformers import (
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
+    BitsAndBytesConfig,
 )
 
 from sal.config import Config
@@ -90,6 +91,10 @@ class MathShepherd(PRM):
             device_map="auto",
             attn_implementation="flash_attention_2",
             torch_dtype=torch.float16,
+            quantization_config=BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_threshold=6.0,
+            ),
         ).eval()
         return model, tokenizer
 
@@ -141,6 +146,10 @@ class RLHFFlow(PRM):
             "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data",
             device_map="auto",
             torch_dtype=torch.bfloat16,
+            quantization_config=BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_threshold=6.0,
+            ),
             **model_kwargs,
         ).eval()
         tokenizer.padding_side = "right"
