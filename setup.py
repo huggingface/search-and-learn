@@ -23,13 +23,13 @@ extras["quality"] = ["ruff", "isort"]
 extras["tests"] = ["pytest"]
 extras["dev"] = ["vllm==0.6.3"] + extras["quality"] + extras["tests"]
 
-
 install_requires = [
     "accelerate",
     "pebble",  # for parallel processing
     "latex2sympy2==1.9.1",  # for MATH answer parsing
     "word2number",  # for MATH answer parsing
-    "transformers>=4.47.0", 
+    "transformers>=4.47.0",
+    "bitsandbytes>=0.45.0",  # quantization
     "fastapi",
 ]
 
