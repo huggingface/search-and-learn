@@ -25,11 +25,12 @@ system_prompt: |
   
   Где [ответ] — это просто конечное слово, число или выражение, решающее задачу.
 
-gpu_memory_utilization: 0.1
+gpu_memory_utilization: 0.5
 filter_duplicates: true
 approach: beam_search
 n: 16
 search_batch_size: 1
+prm_batch_size: 1
 dataset_start: 0
 dataset_end: 10
 seed: 42

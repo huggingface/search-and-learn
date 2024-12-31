@@ -25,9 +25,11 @@ system_prompt: |
   
   Где [ответ] — это просто конечное слово, число или выражение, решающее задачу.
 
+gpu_memory_utilization: 0.5
 approach: dvts
 n: 16
-search_batch_size: 25
+search_batch_size: 1
+prm_batch_size: 1
 dataset_start: 0
 dataset_end: 10
 seed: 42

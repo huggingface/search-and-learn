@@ -25,9 +25,11 @@ system_prompt: |
   
   Где [ответ] — это просто конечное слово, число или выражение, решающее задачу.
 
+gpu_memory_utilization: 0.5
 approach: best_of_n
 n: 256
-search_batch_size: 25
+search_batch_size: 1
+prm_batch_size: 1
 sort_completed: true
 filter_duplicates: true
 dataset_start: 0
