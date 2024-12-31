@@ -81,20 +81,37 @@ class PRM:
 
 
 class MathShepherd(PRM):
-    def load_model_and_tokenizer(self) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+    def load_model_and_tokenizer(
+        self,
+        load_in_4bit=False,
+        load_in_8bit=False,
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
         model_id = "peiyi9979/math-shepherd-mistral-7b-prm"
         tokenizer = AutoTokenizer.from_pretrained(model_id)
         # For batched inference
         tokenizer.pad_token = tokenizer.eos_token
+
+        # Quantization related settings
+        quantization_config = None
+        if load_in_4bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True
+            )
+        if load_in_8bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_threshold=6.0,
+            )
+
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
             device_map="auto",
             attn_implementation="flash_attention_2",
             torch_dtype=torch.float16,
-            quantization_config=BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_threshold=6.0,
-            ),
+            quantization_config=quantization_config,
         ).eval()
         return model, tokenizer
 
@@ -137,19 +154,35 @@ class MathShepherd(PRM):
 
 class RLHFFlow(PRM):
     def load_model_and_tokenizer(
-        self, **model_kwargs
+        self,
+        load_in_4bit=False,
+        load_in_8bit=False,
+        **model_kwargs
     ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
         tokenizer = AutoTokenizer.from_pretrained(
             "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data"
         )
+
+        # Quantization related settings
+        quantization_config = None
+        if load_in_4bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True
+            )
+        if load_in_8bit:
+            quantization_config = BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_threshold=6.0,
+            )
+
         model = AutoModelForCausalLM.from_pretrained(
             "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data",
             device_map="auto",
             torch_dtype=torch.bfloat16,
-            quantization_config=BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_threshold=6.0,
-            ),
+            quantization_config=quantization_config,
             **model_kwargs,
         ).eval()
         tokenizer.padding_side = "right"
