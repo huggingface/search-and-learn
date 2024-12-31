@@ -17,6 +17,7 @@ from itertools import accumulate
 
 import torch
 from transformers import (
+    AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
     PreTrainedModel,
@@ -106,8 +107,13 @@ class MathShepherd(PRM):
                 llm_int8_threshold=6.0,
             )
 
+        # Additional tunes of model settings
+        config = AutoConfig.from_pretrained(model_id)
+        config.use_cache = False  # turn off KV cache
+
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
+            config=config,
             device_map="auto",
             attn_implementation="flash_attention_2",
             torch_dtype=torch.float16,
@@ -159,9 +165,8 @@ class RLHFFlow(PRM):
         load_in_8bit=False,
         **model_kwargs
     ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
-        tokenizer = AutoTokenizer.from_pretrained(
-            "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data"
-        )
+        model_id = "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data"
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
 
         # Quantization related settings
         quantization_config = None
@@ -178,8 +183,13 @@ class RLHFFlow(PRM):
                 llm_int8_threshold=6.0,
             )
 
+        # Additional tunes of model settings
+        config = AutoConfig.from_pretrained(model_id)
+        config.use_cache = False  # turn off KV cache
+
         model = AutoModelForCausalLM.from_pretrained(
-            "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data",
+            model_id,
+            config=config,
             device_map="auto",
             torch_dtype=torch.bfloat16,
             quantization_config=quantization_config,
