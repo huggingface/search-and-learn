@@ -4,6 +4,7 @@ filter_duplicates: true
 approach: beam_search
 n: 16
 search_batch_size: 1
+prm_batch_size: 1
 dataset_start: 0
 dataset_end: 10
 seed: 42
