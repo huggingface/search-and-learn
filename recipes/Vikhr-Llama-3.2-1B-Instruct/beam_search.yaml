@@ -2,7 +2,7 @@
 
 model_path: Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct
 dataset_name: evilfreelancer/MATH-500-Russian
-system_prompt: >
+system_prompt: |
   Решите следующую математическую задачу эффективно и понятно:
   
   - Для простых задач (2 шага или меньше):
@@ -25,6 +25,7 @@ system_prompt: >
   
   Где [ответ] — это просто конечное слово, число или выражение, решающее задачу.
 
+gpu_memory_utilization: 0.1
 filter_duplicates: true
 approach: beam_search
 n: 16

@@ -2,7 +2,7 @@
 
 model_path: Vikhrmodels/Vikhr-Llama-3.2-1B-Instruct
 dataset_name: evilfreelancer/MATH-500-Russian
-system_prompt: >
+system_prompt: |
   Решите следующую математическую задачу эффективно и понятно:
   
   - Для простых задач (2 шага или меньше):

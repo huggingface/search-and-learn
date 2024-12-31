@@ -34,7 +34,7 @@ def batched_math_shepherd_inference(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     inputs: list[str],
-    batch_size: int,
+    batch_size: int = 1,
 ) -> list[list[float]]:
     output_scores = []
     for i in range(0, len(inputs), batch_size):
@@ -200,7 +200,7 @@ class RLHFFlow(PRM):
         questions: list[str],
         outputs: list[list[str]],
         batched: bool = True,
-        batch_size=8,
+        batch_size=1,
     ) -> list[list[float]]:
         if batched is True:
             return self._score_batched(questions, outputs, batch_size=batch_size)
@@ -247,7 +247,7 @@ class RLHFFlow(PRM):
         return all_scores
 
     def _score_batched(
-        self, questions: list[str], outputs: list[list[str]], batch_size: int = 2
+        self, questions: list[str], outputs: list[list[str]], batch_size: int = 1
     ):
         # The RLHFlow models are trained to predict the "+" or "-" tokens in a dialogue, but since these are not unique
         # we need to introduce a dummy special token here for masking.
