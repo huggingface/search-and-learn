@@ -36,6 +36,8 @@ class Config:
     hub_dataset_id: str = None
     overwrite_hub_revision: bool = False
     apply_voting: bool = True
+    load_in_4bit: bool = False
+    load_in_8bit: bool = False
 
     # Dataset Related Options
     dataset_name: str = "HuggingFaceH4/MATH-500"

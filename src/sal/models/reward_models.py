@@ -39,7 +39,7 @@ def batched_math_shepherd_inference(
 ) -> list[list[float]]:
     output_scores = []
     for i in range(0, len(inputs), batch_size):
-        inputs_batch = inputs[i : i + batch_size]
+        inputs_batch = inputs[i: i + batch_size]
         inputs_batch = tokenizer(inputs_batch, padding=True, return_tensors="pt").to(
             model.device
         )
@@ -52,7 +52,7 @@ def batched_math_shepherd_inference(
             counter = 0
             for i in range(len(inputs_batch.input_ids)):
                 count = inputs_batch.input_ids[i].tolist().count(STEP_TAG_ID)
-                step_scores.append(step_scores_flat[counter : counter + count])
+                step_scores.append(step_scores_flat[counter: counter + count])
                 counter += count
 
         # Store the step scores for this batch
@@ -288,8 +288,8 @@ class RLHFFlow(PRM):
 
         output_scores = []
         for i in range(0, len(conversations), batch_size):
-            convs_batch = conversations[i : i + batch_size]
-            convs2_batch = conversations2[i : i + batch_size]
+            convs_batch = conversations[i: i + batch_size]
+            convs2_batch = conversations2[i: i + batch_size]
             inputs_batch = self.tokenizer.apply_chat_template(
                 convs_batch, padding=True, return_tensors="pt"
             ).to(self.model.device)
@@ -325,9 +325,17 @@ class RLHFFlow(PRM):
 
 def load_prm(config: Config) -> PRM:
     if config.prm_path == "peiyi9979/math-shepherd-mistral-7b-prm":
-        return MathShepherd(config)
+        return MathShepherd(
+            config,
+            load_in_4bit=config.load_in_4bit,
+            load_in_8bit=config.load_in_8bit,
+        )
 
     if config.prm_path == "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data":
-        return RLHFFlow(config)
+        return RLHFFlow(
+            config,
+            load_in_4bit=config.load_in_4bit,
+            load_in_8bit=config.load_in_8bit,
+        )
 
     raise NotImplementedError(f"PRM {config.prm_path} not implemented")
