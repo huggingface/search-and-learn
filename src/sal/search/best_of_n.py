@@ -29,16 +29,19 @@ def best_of_n(x, config: Config, llm: LLM, prm: PRM):
             {"role": "system", "content": config.system_prompt},
             {"role": "user", "content": prompt},
         ]
-        for prompt in x["problem"] * config.n
+        for prompt in x["problem"]
     ]
     tokenizer = llm.get_tokenizer()
     # TODO: set the augmented template from a file
     if config.custom_chat_template is not None:
         tokenizer.chat_template = config.custom_chat_template
     templated_convs = tokenizer.apply_chat_template(
-        convs,
-        tokenize=False,
+        convs, tokenize=False, add_generation_prompt=True
     )
+
+    # Duplicate convs to generate config.n completions per prompt so we can do continous batching
+    # This makes [p1, p2, p3, p4] become [p1, p1, p2, p2, p3, p3, p4, p4] for e.g. config.n=2
+    templated_convs = [c for conv in templated_convs for c in [conv] * config.n]
 
     # Initialize empty lists for completions and completion tokens
     completions = [[] for _ in range(len(x["problem"]))]

@@ -29,7 +29,7 @@ install_requires = [
     "pebble",  # for parallel processing
     "latex2sympy2==1.9.1",  # for MATH answer parsing
     "word2number",  # for MATH answer parsing
-    "transformers>=4.47.0", 
+    "transformers>=4.47.0",
     "fastapi",
 ]
 
