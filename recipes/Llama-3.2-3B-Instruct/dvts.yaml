@@ -4,5 +4,5 @@ model_path: meta-llama/Llama-3.2-3B-Instruct
 approach: dvts
 n: 4
 search_batch_size: 25
-num_samples: 10         # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
+num_samples: 10       # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
 seed: 0
