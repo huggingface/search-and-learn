@@ -10,6 +10,9 @@ We provide YAML configs to run the three test time compute variants detailed in 
 | Llama-3.2-3B-Instruct | [Best-of-N](Llama-3.2-3B-Instruct/best_of_n.yaml) |
 | | [Beam search](Llama-3.2-3B-Instruct/beam_search.yaml) |
 | | [DVTS](Llama-3.2-3B-Instruct/dvts.yaml) |
+| Qwen2.5-1.5B-Instruct | [Best-of-N](Qwen2.5-1.5B-Instruct/best_of_n.yaml) |
+| | [Beam search](Qwen2.5-1.5B-Instruct/beam_search.yaml) |
+| | [DVTS](Qwen2.5-1.5B-Instruct/dvts.yaml) |
 
 Each approach can be launched by specifying the associated YAML file, for example:
 

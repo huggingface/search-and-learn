@@ -1,0 +1,9 @@
+# refer to src/sal/config.py for more options
+
+model_path: Qwen/Qwen2.5-1.5B-Instruct
+custom_chat_template: null
+approach: dvts
+n: 4
+search_batch_size: 25
+num_samples: 10       # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
+seed: 0
