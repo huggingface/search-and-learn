@@ -83,7 +83,7 @@ All our experiments were run on H100s with 80GB of VRAM, so you may need to adju
 
 ### Generate completions
 
-Below are commands to generate completions for each method:
+Below are commands to generate completions for each method. Note that we ran each method across 5 independent seeds to quantify the variability 
 
 **Best-of-N**
 
@@ -92,10 +92,13 @@ Below are commands to generate completions for each method:
 
 ```shell
 export CONFIG=recipes/Llama-3.2-1B-Instruct/best_of_n.yaml
+# Repeat for seeds 0-4
+export SEED=0 
 
 python scripts/test_time_compute.py $CONFIG \
     --n=256 \
-    --num_samples=500
+    --num_samples=500 \
+    --seed=$SEED
 ```
 
 **Beam search**
@@ -104,11 +107,14 @@ Unlike Best-of-N or DVTS which only require a single run at `n=256`, the beam se
 
 ```shell
 export CONFIG=recipes/Llama-3.2-1B-Instruct/beam_search.yaml
+# Repeat for seeds 0-4
+export SEED=0 
 
 for n in 4 16 64 256; do
     python scripts/test_time_compute.py $CONFIG \
         --n=$n \
-        --num_samples=500
+        --num_samples=500 \
+        --seed=$SEED
 done
 ```
 
@@ -116,25 +122,34 @@ done
 
 ```shell
 export CONFIG=recipes/Llama-3.2-1B-Instruct/dvts.yaml
+# Repeat for seeds 0-4
+export SEED=0 
 
 python scripts/test_time_compute.py $CONFIG \
     --n=256 \
-    --num_samples=500
+    --num_samples=500 \
+    --seed=$SEED
 ```
 
-In practice, running each method over the full 500 problems with `n=256` completions is _very slow_ (~3 hours for Best-of-N and ~30 hours for beam search and DVTS). To speed things up, we provide Slurm scripts that configure array jobs to parallelize the evaluation of the three methods:
+In practice, running each method over the full 500 problems with `n=256` completions is _very slow_ on a single GPU (~3 hours for Best-of-N and ~60+ hours for beam search and DVTS). To speed things up, we provide Slurm scripts that configure array jobs to parallelize the evaluation of the three methods:
 
 ```shell
 # Best of N
 sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/best_of_n.yaml \
-    --hub_dataset_id=<YOUR_ORG>/Llama-3.2-1B-Instruct-best_of_n-completions
+    --n=256 \
+    --seed=0 \
+    --hub_dataset_id <YOUR_ORG>/Llama-3.2-1B-Instruct-best_of_n-completions
 
-# Beamsearch n=4,16,64,256
-sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/beam_search.yaml --n=4 \
+# Beamsearch (repeat for n=4,16,64,256)
+sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/beam_search.yaml \
+    --n=4 \
+    --seed=0 \
     --hub_dataset_id=<YOUR_ORG>/Llama-3.2-1B-Instruct-beam_search-completions
 
-# DVTS n=16
-sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/dvts.yaml --n=16 \
+# DVTS
+sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/dvts.yaml \
+    --n 256 \
+    --seed 0 \
     --hub_dataset_id=<YOUR_ORG>/Llama-3.2-1B-Instruct-dvts-completions
 ```
 
@@ -143,7 +158,9 @@ By default this will shard the dataset into 20 chunks in order to run the algori
 The full dataset can then be reconstructed with:
 
 ```shell
-python scripts/merge_chunks.py --dataset_name=<YOUR_ORG>/Llama-3.2-1B-Instruct-best_of_n-completions
+python scripts/merge_chunks.py \
+    --dataset_name=<YOUR_ORG>/Llama-3.2-1B-Instruct-best_of_n-completions \
+    --filter_strings seed-0
 ```
 
 ## Extacting the MATH-500 accuracy numbers
