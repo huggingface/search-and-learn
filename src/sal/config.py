@@ -34,6 +34,7 @@ class Config:
     num_proc: int = None
     push_to_hub: bool = False
     hub_dataset_id: str = None
+    hub_dataset_private: bool = False
     overwrite_hub_revision: bool = False
     apply_voting: bool = True
 

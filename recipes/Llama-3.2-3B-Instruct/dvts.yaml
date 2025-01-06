@@ -1,9 +1,8 @@
 # refer to src/sal/config.py for more options
 
-approach: best_of_n
+model_path: meta-llama/Llama-3.2-3B-Instruct
+approach: dvts
 n: 4
-search_batch_size: 8
-sort_completed: true
-filter_duplicates: true
+search_batch_size: 25
 num_samples: 10         # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
 seed: 0

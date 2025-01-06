@@ -26,14 +26,15 @@ from sal.utils.hub import get_dataset_revisions
 
 Usage:
 
-# Merge all revisions of a dataset
+# Merge all revisions of a dataset for a given seed
 python scripts/merge_chunks.py \
-    --dataset_name reliable-agents/Qwen2.5-Math-1.5B-Instruct-bon-prm-completions
+    --dataset_name HuggingFaceH4/Llama-3.2-1B-Instruct-best-of-N-completions \
+    --filter_strings seed-0
 
-# Merge only revisions that contain "last" or "T-0.0" in their name
+# Merge only revisions that contain "last" or "T-0.0" or "seed-0" in their name
 python scripts/merge_chunks.py \
-    --dataset_name reliable-agents/Qwen2.5-Math-1.5B-Instruct-bon-prm-completions \
-    --filter_strings last T-0.0
+    --dataset_name HuggingFaceH4/Llama-3.2-1B-Instruct-best-of-N-completions \
+    --filter_strings last T-0.0 seed-0
 """
 
 
@@ -42,6 +43,7 @@ class Args:
     dataset_name: str
     dataset_split: str = "train"
     filter_strings: List[str] = field(default_factory=list)
+    hub_dataset_private: bool = False
 
 
 def load_single_revision(args):
@@ -104,7 +106,7 @@ def main():
         args.dataset_name,
         config_name=merged_config,
         split=args.dataset_split,
-        private=True,
+        private=config.hub_dataset_private,
     )
     print(f"Pushed merged dataset to {url}")
 
