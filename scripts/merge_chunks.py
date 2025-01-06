@@ -106,7 +106,7 @@ def main():
         args.dataset_name,
         config_name=merged_config,
         split=args.dataset_split,
-        private=config.hub_dataset_private,
+        private=args.hub_dataset_private,
     )
     print(f"Pushed merged dataset to {url}")
 
