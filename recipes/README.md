@@ -137,6 +137,8 @@ python scripts/test_time_compute.py $CONFIG \
 
 The result will be a dataset like [this](https://huggingface.co/datasets/HuggingFaceH4/Llama-3.2-1B-Instruct-DVTS-completions)
 
+#### Speeding up generation via parallelisation
+
 In practice, running each method over the full 500 problems with `n=256` completions is _very slow_ on a single GPU (~3 hours for Best-of-N and ~60+ hours for beam search and DVTS). To speed things up, we provide Slurm scripts that configure array jobs to parallelize the evaluation of the three methods:
 
 ```shell
@@ -159,14 +161,14 @@ sbatch recipes/launch_array.slurm recipes/Llama-3.2-1B-Instruct/dvts.yaml \
     --hub_dataset_id=<YOUR_ORG>/Llama-3.2-1B-Instruct-dvts-completions
 ```
 
-By default this will shard the dataset into 20 chunks in order to run the algorithm in parallel. The dataset chunks will be pushed to the Hugging Face Hub as separate branches/revisions.
+By default this will shard the dataset into 20 chunks of 25 problems each in order to run each algorithm in parallel. The dataset chunks will then be pushed to the Hugging Face Hub as separate branches/revisions.
 
-The full dataset can then be reconstructed with:
+The full dataset can then be reconstructed from the chunks with:
 
 ```shell
 python scripts/merge_chunks.py \
     --dataset_name=<YOUR_ORG>/Llama-3.2-1B-Instruct-best_of_n-completions \
-    --filter_strings seed-0
+    --filter_strings seed-0 # Adjust for each seed
 ```
 
 ## Extracting the MATH-500 accuracy numbers
