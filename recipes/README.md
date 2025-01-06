@@ -7,7 +7,7 @@ We provide YAML configs to run the three test time compute variants detailed in 
 | Llama-3.2-1B-Instruct | [Best-of-N](Llama-3.2-1B-Instruct/best_of_n.yaml) |
 | | [Beam search](Llama-3.2-1B-Instruct/beam_search.yaml) |
 | | [DVTS](Llama-3.2-1B-Instruct/dvts.yaml) |
-| Llama-3.2-3B-Instruct | [Best-of-N](Llama-3.2-1B-Instruct/best_of_n.yaml) |
+| Llama-3.2-3B-Instruct | [Best-of-N](Llama-3.2-3B-Instruct/best_of_n.yaml) |
 | | [Beam search](Llama-3.2-3B-Instruct/beam_search.yaml) |
 | | [DVTS](Llama-3.2-3B-Instruct/dvts.yaml) |
 
