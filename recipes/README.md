@@ -101,6 +101,8 @@ python scripts/test_time_compute.py $CONFIG \
     --seed=$SEED
 ```
 
+The result will be a dataset like [this](https://huggingface.co/datasets/HuggingFaceH4/Llama-3.2-1B-Instruct-best-of-N-completions)
+
 **Beam search**
 
 Unlike Best-of-N or DVTS which only require a single run at `n=256`, the beam search completions must be generated separately for each value of `n`:
@@ -118,6 +120,8 @@ for n in 4 16 64 256; do
 done
 ```
 
+The result will be a dataset like [this](https://huggingface.co/datasets/HuggingFaceH4/Llama-3.2-1B-Instruct-beam-search-completions)
+
 **DVTS**
 
 ```shell
@@ -130,6 +134,8 @@ python scripts/test_time_compute.py $CONFIG \
     --num_samples=500 \
     --seed=$SEED
 ```
+
+The result will be a dataset like [this](https://huggingface.co/datasets/HuggingFaceH4/Llama-3.2-1B-Instruct-DVTS-completions)
 
 In practice, running each method over the full 500 problems with `n=256` completions is _very slow_ on a single GPU (~3 hours for Best-of-N and ~60+ hours for beam search and DVTS). To speed things up, we provide Slurm scripts that configure array jobs to parallelize the evaluation of the three methods:
 
@@ -163,7 +169,7 @@ python scripts/merge_chunks.py \
     --filter_strings seed-0
 ```
 
-## Extacting the MATH-500 accuracy numbers
+## Extracting the MATH-500 accuracy numbers
 
 To get the final numbers for the evalations, we use a [fork](https://github.com/huggingface/Qwen2.5-Math) of the [Qwen2.5-Math evaluation repo](https://github.com/QwenLM/Qwen2.5-Math). Please follow the installation and usage instructions in our fork to obtain accuracies on MATH-500.
 
