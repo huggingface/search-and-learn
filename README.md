@@ -83,9 +83,9 @@ You can now check out the `scripts` and `recipes` directories for instructions o
 └── tests                       <- Unit tests
 ```
 
-## Replicating our scaling test-time compute results
+## Replicating our test-time compute results
 
-The [recipes readme](recipes/README.md) includes launch commands and config files in order to replicate our results.
+The [`recipes` README](recipes/README.md) includes launch commands and config files in order to replicate our results.
 
 
 ## Citation
