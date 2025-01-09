@@ -181,4 +181,6 @@ To get the final numbers for the evalations, we use a [fork](https://github.com/
 > [!NOTE]
 > We are working on switching the Qwen-Math parser for an improved one in `lighteval`. Once we have validated the results, we will be able to have a stand-alone evaluation script directly in `search-and-learn`: stay tuned!
 
+## Training Process Reward Models
 
+The [`training` README](training/README.md) is a guide to both train PRMs using [TRL](https://github.com/huggingface/trl) and evaluate them using the [ProcessBench](https://arxiv.org/abs/2412.06559) benchmark, with the code used to fine-tune [Qwen/Qwen2.5-Math-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-1.5B-Instruct) and [Qwen/Qwen2.5-Math-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-7B-Instruct) and evaluate the final models.
