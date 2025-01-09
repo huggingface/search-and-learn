@@ -14,7 +14,7 @@ source .venv/bin/activate
 uv pip install .
 ```
 
-And you can navigate to the folders under `/training`. Two folders can be found containing a fine tune of [Qwen/Qwen2.5-Math-1.5B-Instruct](...) on [plaguss/prm800k-trl-dedup](...), and [Qwen/Qwen2.5-Math-7B-Instruct](...). The trainings were run in a slurm cluster with 8xH100, but they can be adapted to the number of available GPUs and resources:
+And you can navigate to the folders under `/training`. Two folders can be found containing a fine tune of [Qwen/Qwen2.5-Math-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-1.5B-Instruct) on [HuggingFaceH4/prm800k-trl-dedup](https://huggingface.co/datasets/HuggingFaceH4/prm800k-trl-dedup), and [Qwen/Qwen2.5-Math-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-7B-Instruct). The trainings were run in a slurm cluster with 8xH100, but they can be adapted to the number of available GPUs and resources:
 
 | Model | Training Script |
 | :--- | :--- |
@@ -34,9 +34,9 @@ The figure contains the weights and biases loss curves for the previous models:
 
 The following two models were fine tuned using the scripts, examples of use can be found in the corresponding repository:
 
-- [plaguss/Qwen2.5-Math-7B-Instruct-PRM-0.2](https://huggingface.co/plaguss/Qwen2.5-Math-7B-Instruct-PRM-0.2)
+- [HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2](https://huggingface.co/HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2)
 
-- [plaguss/Qwen2.5-Math-1.5B-Instruct-PRM-0.2](https://huggingface.co/plaguss/Qwen2.5-Math-1.5B-Instruct-PRM-0.2)
+- [HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2](https://huggingface.co/HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2)
 
 ## Benchmarking with ProcessBench
 
@@ -55,7 +55,7 @@ All the experiments were run in 1xH100, the batch size should be adjusted to you
 cd code/
 
 python run_eval_prm_trl.py \
-    --model_name "plaguss/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \  # Model to evaluate
+    --model_name "HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \  # Model to evaluate
     --output_dir "./outputs" \  # Directory to save the results
     --batch_size 256 \  # Batch size
     --sep "\n\n"  # Separator, MUST be the same used during training
@@ -64,12 +64,12 @@ python run_eval_prm_trl.py \
 Click the following buttons to see the example runs and results for the models:
 
 <details>
-<summary>plaguss/Qwen2.5-Math-1.5B-Instruct-PRM-0.2</summary>
+<summary>HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2</summary>
 
 ```bash
 python run_eval_prm_trl.py \
     --config "all" \
-    --model_name "plaguss/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \
+    --model_name "HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \
     --output_dir "./outputs" \
     --batch_size 256 \
     --sep "\n\n"
@@ -93,12 +93,11 @@ Weighted      -> Precision: 30.09  Recall: 63.81  F1 Score: 40.38
 
 
 <details>
-<summary>plaguss/Qwen2.5-Math-7B-Instruct-PRM-0.2</summary>
+<summary>HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2</summary>
 
 ```bash
 python run_eval_prm_trl.py \
-    --config "all" \
-    --model_name "plaguss/Qwen2.5-Math-7B-Instruct-PRM-0.2" \
+    --model_name "HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2" \
     --output_dir "./outputs" \
     --batch_size 128 \
     --sep "\n\n"
