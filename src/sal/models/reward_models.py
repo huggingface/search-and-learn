@@ -13,20 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from itertools import accumulate
 
+from tqdm import tqdm
 import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
+    pipeline,
+    Pipeline,
 )
 
+
 from sal.config import Config
+from sal.models.utils import BatchProcessor, process_results, Example
+
 
 CANDIDATE_TOKENS = [648, 387]
 STEP_TAG_ID = 12902
+LABEL_MAP = {"LABEL_0": False, "LABEL_1": True}
+LABEL_FOR_TRUE = "LABEL_1"
 
 
 def batched_math_shepherd_inference(
@@ -66,7 +75,12 @@ def batched_math_shepherd_inference(
 class PRM:
     def __init__(self, search_config: Config, **model_kwargs):
         self.search_config = search_config
-        self.model, self.tokenizer = self.load_model_and_tokenizer(**model_kwargs)
+
+        if getattr(self, "load_pipeline", None):
+            # Allow loading a transformers pipeline if available (for TRL based models)
+            self.pipeline = self.load_pipeline(**model_kwargs)
+        else:
+            self.model, self.tokenizer = self.load_model_and_tokenizer(**model_kwargs)
 
     def load_model_and_tokenizer(
         self, **model_kwargs
@@ -271,11 +285,73 @@ class RLHFFlow(PRM):
         return reshaped_output_scores
 
 
+class TRLPRM(PRM):
+    def load_pipeline(self, **model_kwargs) -> Pipeline:
+        return pipeline(
+            "token-classification",
+            model=self.search_config.prm_path,
+            device_map="auto",
+            **model_kwargs
+        )
+
+    def score(
+        self, questions: list[str], outputs: list[list[str]]
+    ) -> list[list[float]]:
+        inputs_for_prm = [
+            Example(
+                problem=question,
+                steps=answers,
+                sep=self.search_config.separator
+            )
+            for question, answers in zip(questions, outputs)
+        ]
+        batch_processor = BatchProcessor(inputs_for_prm, self.search_config.prm_batch_size)
+        processed_data = {}
+        for batch_steps, batch_indices in tqdm(
+            batch_processor,
+            total=batch_processor.get_total_batches(),
+            desc="PRM Inference...",
+        ):
+            batched_outputs = self.pipeline(batch_steps)
+            # Assign results back to original structure
+            process_results(batched_outputs, batch_indices, processed_data)
+            # Clear GPU memory
+            torch.cuda.empty_cache()
+
+        def get_scores(processed_data):
+            scores = []
+            for _, steps in processed_data.items():
+                step_scores = []
+                for output in steps:
+                    step_result = output[-1]  # The last token is the one we want the score from
+                    prob = (
+                        float(1 - step_result["score"])
+                        if step_result["entity"] == LABEL_FOR_TRUE
+                        else float(step_result["score"])
+                    )
+                    # Add the value as a list to emulate the behaviour from the other models, which return
+                    # logits for every step. In this case we only have the probability for the relevant
+                    # token, so we do as if we had the value for all the steps (so we only take into account
+                    # the last)
+                    step_scores.append([prob])
+                scores.append(step_scores)
+
+            return scores
+        # Obtain the outputs scores
+        output_scores = get_scores(processed_data)
+
+        return output_scores
+
+
 def load_prm(config: Config) -> PRM:
     if config.prm_path == "peiyi9979/math-shepherd-mistral-7b-prm":
         return MathShepherd(config)
 
     if config.prm_path == "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data":
         return RLHFFlow(config)
+
+    if config.prm_path.startswith("HuggingFaceH4"):
+        # Assume the models under HuggingFaceH4/ org are all trained using TRL.
+        return TRLPRM(config)
 
     raise NotImplementedError(f"PRM {config.prm_path} not implemented")
