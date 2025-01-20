@@ -4,22 +4,18 @@ In TRL v0.13.0, the [PRM trainer](https://huggingface.co/docs/trl/v0.13.0/en/prm
 
 ## Fine-tuning with TRL
 
-Using `uv` (`pip` or any other package installer should work similar), clone the [TRL](https://github.com/huggingface/trl) repository, create a virtual environment and install the dependencies:
+First install [TRL](https://github.com/huggingface/trl) by cloning the repo and installing from the main branch, or simply running the following command:
 
-```bash
-git clone https://github.com/huggingface/trl.git
-cd trl
-uv venv .venv --python 3.12
-source .venv/bin/activate
-uv pip install .
+```shell
+pip install -e '.[trl]'
 ```
 
 And you can navigate to the folders under `/training`. Two folders can be found containing a fine tune of [Qwen/Qwen2.5-Math-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-1.5B-Instruct) on [HuggingFaceH4/prm800k-trl-dedup](https://huggingface.co/datasets/HuggingFaceH4/prm800k-trl-dedup), and [Qwen/Qwen2.5-Math-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Math-7B-Instruct). The trainings were run in a slurm cluster with 8xH100, but they can be adapted to the number of available GPUs and resources:
 
 | Model | Training Script |
 | :--- | :--- |
-| Qwen/Qwen2.5-Math-1.5B-Instruct | [Script](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_1p5b_instruct.sh) / [Slurm](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_1p5b_instruct.slurm)|
-| Qwen/Qwen2.5-Math-7B-Instruct | [Script](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_7b_instruct.sh) / [Slurm](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_7b_instruct.slurm)|
+| Qwen/Qwen2.5-Math-1.5B-Instruct | [Script](Qwen2.5-Math-1.5B-Instruct-PRM/train.sh) / [Slurm](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_1p5b_instruct.slurm)|
+| Qwen/Qwen2.5-Math-7B-Instruct | [Script](Qwen2.5-Math-1.5B-Instruct-PRM/train.sh) / [Slurm](Qwen2.5-Math-1.5B-Instruct-PRM/prm_qwen_math_7b_instruct.slurm)|
 
 <details>
 <summary>Click for a sample WandB run.</summary>
@@ -40,14 +36,30 @@ The following two models were fine tuned using the scripts, examples of use can 
 
 ## Benchmarking with ProcessBench
 
-Using `uv` (`pip` or any other package installer should work similar), clone the [ProcessBench](https://github.com/huggingface/ProcessBench) fork that includes the script to evaluate TRL models, create a virtual environment, and install the requirements:
+Click on any of the instructions to install either using `uv` or `conda+pip`. You will need to clone the [ProcessBench](https://github.com/huggingface/ProcessBench) repository, create a virtual environment, and install the requirements:
 
-```bash
+<details>
+<summary>Install with uv</summary>
+
+```shell
 git clone https://github.com/huggingface/ProcessBench.git
 uv venv .venv --python 3.12
 source .venv/bin/activate
 uv pip install -r requirements-trl.txt
 ```
+
+</details>
+
+<details>
+<summary>Install with conda</summary>
+
+```shell
+git clone https://github.com/huggingface/ProcessBench.git
+conda create -n processbench python=3.12 && conda activate processbench
+pip install -r requirements-trl.txt
+```
+
+</details>
 
 All the experiments were run in 1xH100, the batch size should be adjusted to your capacity (for reference, a batch size of 256 for Qwen2.5-Math-1.5B-Instruct took near 0.5h, and a batch size of 128 for Qwen2.5-Math-7B-Instruct near 2h). Navigate to the `/code` folder, and run the `run_eval_prm_trl.py` script:
 
