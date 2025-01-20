@@ -1,12 +1,15 @@
+#!/bin/bash
+set -ex
+
 accelerate launch --config_file examples/accelerate_configs/deepspeed_zero3.yaml examples/scripts/prm.py \
-    --run_name="prm/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \
-    --model_name_or_path="Qwen/Qwen2.5-Math-1.5B-Instruct" \
+    --run_name="prm/Qwen2.5-Math-7B-Instruct-PRM-0.2" \
+    --model_name_or_path="Qwen/Qwen2.5-Math-7B-Instruct" \
     --dataset_name="plaguss/prm800k-trl-dedup" \
-    --output_dir="prm/Qwen2.5-Math-1.5B-Instruct-PRM-0.2" \
+    --output_dir="prm/Qwen2.5-Math-7B-Instruct-PRM-0.2" \
     --report_to="wandb" \
     --learning_rate=1.0e-06 \
-    --per_device_train_batch_size=16 \
-    --per_device_eval_batch_size=8 \
+    --per_device_train_batch_size=8 \
+    --per_device_eval_batch_size=4 \
     --do_eval \
     --eval_strategy="steps" \
     --eval_steps=50 \
