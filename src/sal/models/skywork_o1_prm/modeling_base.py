@@ -15,9 +15,9 @@
 import json
 import logging
 import os
+import sys
 from copy import deepcopy
 from typing import Optional
-import sys
 
 import torch
 import torch.nn as nn
@@ -37,6 +37,7 @@ if sys.version_info < (3, 8):
 else:
     _is_python_greater_3_8 = True
 
+
 def is_transformers_greater_than(current_version: str) -> bool:
     if _is_python_greater_3_8:
         from importlib.metadata import version
@@ -47,6 +48,7 @@ def is_transformers_greater_than(current_version: str) -> bool:
 
         _transformers_version = pkg_resources.get_distribution("transformers").version
     return _transformers_version > current_version
+
 
 if is_transformers_greater_than("4.33.0"):
     from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
@@ -80,28 +82,41 @@ class PreTrainedModelWrapper(nn.Module):
     supported_args = None
     supported_modules = ("v_head",)
     supported_rm_modules = ("score",)
-    supported_pretrained_model_architectures = ((PreTrainedModel))
+    supported_pretrained_model_architectures = PreTrainedModel
 
     def __init__(
-        self, pretrained_model=None, score_module=None, supports_rm_adapter=False, rm_adapter_name=None, **kwargs
+        self,
+        pretrained_model=None,
+        score_module=None,
+        supports_rm_adapter=False,
+        rm_adapter_name=None,
+        **kwargs,
     ):
         super().__init__()
         self.pretrained_model = pretrained_model
 
         self.config = pretrained_model.config
-        self.prepare_inputs_for_generation = pretrained_model.prepare_inputs_for_generation
+        self.prepare_inputs_for_generation = (
+            pretrained_model.prepare_inputs_for_generation
+        )
         self.is_loaded_in_8bit = getattr(pretrained_model, "is_loaded_in_8bit", False)
         self.is_loaded_in_4bit = getattr(pretrained_model, "is_loaded_in_4bit", False)
         self.is_sequential_parallel = False
 
         if hasattr(pretrained_model, "gradient_checkpointing_disable"):
-            self.gradient_checkpointing_disable = pretrained_model.gradient_checkpointing_disable
+            self.gradient_checkpointing_disable = (
+                pretrained_model.gradient_checkpointing_disable
+            )
 
         if hasattr(pretrained_model, "gradient_checkpointing_enable"):
-            self.gradient_checkpointing_enable = pretrained_model.gradient_checkpointing_enable
+            self.gradient_checkpointing_enable = (
+                pretrained_model.gradient_checkpointing_enable
+            )
 
         if hasattr(pretrained_model, "enable_input_require_grads"):
-            self.enable_input_require_grads = pretrained_model.enable_input_require_grads
+            self.enable_input_require_grads = (
+                pretrained_model.enable_input_require_grads
+            )
 
         self.supports_rm_adapter = supports_rm_adapter
         self.rm_adapter_name = rm_adapter_name
@@ -138,7 +153,9 @@ class PreTrainedModelWrapper(nn.Module):
             reward_adapter = kwargs.pop("reward_adapter", None)
             reward_adapter_name = kwargs.pop("reward_adapter_name", "reward_adapter")
             is_trainable = kwargs.pop("is_trainable", False)
-            trl_model_args, pretrained_kwargs, peft_quantization_kwargs = cls._split_kwargs(kwargs)
+            trl_model_args, pretrained_kwargs, peft_quantization_kwargs = (
+                cls._split_kwargs(kwargs)
+            )
             token = pretrained_kwargs.get("token", None)
         else:
             peft_config = None
@@ -157,13 +174,27 @@ class PreTrainedModelWrapper(nn.Module):
 
         current_device = cls._get_current_device()
         if isinstance(pretrained_model_name_or_path, str):
-            is_loaded_in_8bit = pretrained_kwargs["load_in_8bit"] if "load_in_8bit" in pretrained_kwargs else False
-            is_loaded_in_4bit = pretrained_kwargs["load_in_4bit"] if "load_in_4bit" in pretrained_kwargs else False
+            is_loaded_in_8bit = (
+                pretrained_kwargs["load_in_8bit"]
+                if "load_in_8bit" in pretrained_kwargs
+                else False
+            )
+            is_loaded_in_4bit = (
+                pretrained_kwargs["load_in_4bit"]
+                if "load_in_4bit" in pretrained_kwargs
+                else False
+            )
         else:
-            is_loaded_in_8bit = getattr(pretrained_model_name_or_path, "is_loaded_in_8bit", False)
-            is_loaded_in_4bit = getattr(pretrained_model_name_or_path, "is_loaded_in_4bit", False)
+            is_loaded_in_8bit = getattr(
+                pretrained_model_name_or_path, "is_loaded_in_8bit", False
+            )
+            is_loaded_in_4bit = getattr(
+                pretrained_model_name_or_path, "is_loaded_in_4bit", False
+            )
 
-        if (is_loaded_in_8bit or is_loaded_in_4bit) and "device_map" not in pretrained_kwargs:
+        if (
+            is_loaded_in_8bit or is_loaded_in_4bit
+        ) and "device_map" not in pretrained_kwargs:
             # warn users
             logging.warning(
                 "The `device_map` argument is not provided. We will override the device_map argument."
@@ -173,26 +204,26 @@ class PreTrainedModelWrapper(nn.Module):
             )
             pretrained_kwargs["device_map"] = {"": current_device}
 
-
-
         # First, load the pre-trained model using the parent-class
         # either `AutoModelForCausalLM` or `AutoModelForSeq2SeqLM`
         if isinstance(pretrained_model_name_or_path, str):
-
             remote_adapter_config = None
-            local_adapter_present = os.path.exists(os.path.join(pretrained_model_name_or_path, "adapter_config.json"))
+            local_adapter_present = os.path.exists(
+                os.path.join(pretrained_model_name_or_path, "adapter_config.json")
+            )
             pretrained_model = cls.transformers_parent_class.from_pretrained(
                 pretrained_model_name_or_path, *model_args, **pretrained_kwargs
             )
- 
-        elif isinstance(pretrained_model_name_or_path, cls.supported_pretrained_model_architectures):
+
+        elif isinstance(
+            pretrained_model_name_or_path, cls.supported_pretrained_model_architectures
+        ):
             pretrained_model = pretrained_model_name_or_path
         else:
             raise ValueError(
                 "pretrained_model_name_or_path should be a string or a PreTrainedModel, "
                 f"but is {type(pretrained_model_name_or_path)}"
             )
-
 
         # Add reward modeling adapter if specified
         if not is_peft_model and reward_adapter is not None:
@@ -216,25 +247,38 @@ class PreTrainedModelWrapper(nn.Module):
         # state_dict is removed from the model after loading it.
         is_resuming_training = True
         if isinstance(pretrained_model_name_or_path, str):
-            safe_filename = os.path.join(pretrained_model_name_or_path, "model.safetensors")
+            safe_filename = os.path.join(
+                pretrained_model_name_or_path, "model.safetensors"
+            )
             filename = os.path.join(pretrained_model_name_or_path, "pytorch_model.bin")
 
-            sharded_index_filename = os.path.join(pretrained_model_name_or_path, "pytorch_model.bin.index.json")
-            safe_sharded_index_filename = os.path.join(pretrained_model_name_or_path, "model.safetensors.index.json")
+            sharded_index_filename = os.path.join(
+                pretrained_model_name_or_path, "pytorch_model.bin.index.json"
+            )
+            safe_sharded_index_filename = os.path.join(
+                pretrained_model_name_or_path, "model.safetensors.index.json"
+            )
             is_sharded = False
             use_safe = os.path.exists(safe_filename)
 
             if not (os.path.exists(filename) or os.path.exists(safe_filename)):
                 # Try with `pytorch_model.bin`
-                filename, files_to_download, is_sharded, is_resuming_training = cls._get_checkpoint_from_hub(
-                    pretrained_model,
-                    pretrained_model_name_or_path,
-                    sharded_index_filename,
-                    token=token,
+                filename, files_to_download, is_sharded, is_resuming_training = (
+                    cls._get_checkpoint_from_hub(
+                        pretrained_model,
+                        pretrained_model_name_or_path,
+                        sharded_index_filename,
+                        token=token,
+                    )
                 )
                 # Try with safetensors
                 if filename is None and files_to_download is None:
-                    safe_filename, files_to_download, is_sharded, is_resuming_training = cls._get_checkpoint_from_hub(
+                    (
+                        safe_filename,
+                        files_to_download,
+                        is_sharded,
+                        is_resuming_training,
+                    ) = cls._get_checkpoint_from_hub(
                         pretrained_model,
                         pretrained_model_name_or_path,
                         safe_sharded_index_filename,
@@ -262,7 +306,9 @@ class PreTrainedModelWrapper(nn.Module):
                         )
                         state_dict.update(loading_func(filename, **load_kwargs))
                 else:
-                    state_dict = loading_func(filename if not use_safe else safe_filename, **load_kwargs)
+                    state_dict = loading_func(
+                        filename if not use_safe else safe_filename, **load_kwargs
+                    )
 
         else:
             state_dict = pretrained_model_name_or_path.state_dict()
@@ -297,7 +343,12 @@ class PreTrainedModelWrapper(nn.Module):
                 token=token,
             )
         # sharded
-        except (EntryNotFoundError, LocalEntryNotFoundError, HFValidationError, RepositoryNotFoundError):
+        except (
+            EntryNotFoundError,
+            LocalEntryNotFoundError,
+            HFValidationError,
+            RepositoryNotFoundError,
+        ):
             if os.path.exists(index_filename):
                 index_file_name = index_filename
             else:
@@ -307,7 +358,12 @@ class PreTrainedModelWrapper(nn.Module):
                         model_index_name,
                         token=token,
                     )
-                except (EntryNotFoundError, LocalEntryNotFoundError, HFValidationError, RepositoryNotFoundError):
+                except (
+                    EntryNotFoundError,
+                    LocalEntryNotFoundError,
+                    HFValidationError,
+                    RepositoryNotFoundError,
+                ):
                     # not continue training, do not have v_head weight
                     is_resuming_training = False
                     logging.warning(
@@ -368,7 +424,11 @@ class PreTrainedModelWrapper(nn.Module):
 
     @classmethod
     def add_and_load_reward_modeling_adapter(
-        cls, pretrained_model, adapter_model_id, adapter_name="reward_model_adapter", token=None
+        cls,
+        pretrained_model,
+        adapter_model_id,
+        adapter_name="reward_model_adapter",
+        token=None,
     ):
         r"""
         Add and load a reward modeling adapter. This method can only be used if the
@@ -376,7 +436,9 @@ class PreTrainedModelWrapper(nn.Module):
         argument, pointing to the id of the reward modeling adapter. The latest needs also to contain the
         score head in order to produce the reward.
         """
-        pretrained_model.load_adapter(adapter_model_id, adapter_name, is_trainable=False)
+        pretrained_model.load_adapter(
+            adapter_model_id, adapter_name, is_trainable=False
+        )
         pretrained_model.train()
 
         filename = os.path.join(adapter_model_id, "adapter_model.bin")
@@ -530,7 +592,9 @@ class PreTrainedModelWrapper(nn.Module):
 
 
 def create_reference_model(
-    model: PreTrainedModelWrapper, num_shared_layers: Optional[int] = None, pattern: Optional[str] = None
+    model: PreTrainedModelWrapper,
+    num_shared_layers: Optional[int] = None,
+    pattern: Optional[str] = None,
 ) -> PreTrainedModelWrapper:
     """
     Creates a static reference copy of a model. Note that model will be in `.eval()` mode.
@@ -598,6 +662,8 @@ def create_reference_model(
         param.requires_grad = False
 
     if pattern is not None and len(unshared_param_list) == 0:
-        logging.warning("Pattern passed or found, but no layers matched in the model. Check for a typo.")
+        logging.warning(
+            "Pattern passed or found, but no layers matched in the model. Check for a typo."
+        )
 
     return ref_model.eval()

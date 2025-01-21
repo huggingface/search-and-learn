@@ -15,6 +15,7 @@
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM
+
 from .modeling_base import PreTrainedModelWrapper
 
 
@@ -30,7 +31,9 @@ class ValueHead(nn.Module):
         else:
             summary_dropout_prob = config.summary_dropout_prob
 
-        self.dropout = nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity()
+        self.dropout = (
+            nn.Dropout(summary_dropout_prob) if summary_dropout_prob else nn.Identity()
+        )
 
         # some models such as OPT have a projection layer before the word embeddings - e.g. OPT-350m
         if hasattr(config, "hidden_size"):
@@ -59,7 +62,6 @@ class ValueHead(nn.Module):
 
 
 class SkyworkPRMModel(PreTrainedModelWrapper):
-
     transformers_parent_class = AutoModelForCausalLM
     lm_head_namings = ["lm_head", "embed_out"]
     supported_args = (
@@ -82,8 +84,13 @@ class SkyworkPRMModel(PreTrainedModelWrapper):
         super().__init__(pretrained_model, **kwargs)
         v_head_kwargs, _, _ = self._split_kwargs(kwargs)
 
-        if not any(hasattr(self.pretrained_model, attribute) for attribute in self.lm_head_namings):
-            raise ValueError("The model does not have a language model head, please use a model that has one.")
+        if not any(
+            hasattr(self.pretrained_model, attribute)
+            for attribute in self.lm_head_namings
+        ):
+            raise ValueError(
+                "The model does not have a language model head, please use a model that has one."
+            )
 
         self.v_head = ValueHead(self.pretrained_model.config, **v_head_kwargs)
 
@@ -138,10 +145,15 @@ class SkyworkPRMModel(PreTrainedModelWrapper):
             kwargs (`dict`, `optional`):
                 Additional keyword arguments, that are passed to the wrapped model.
         """
-        kwargs["output_hidden_states"] = True  # this had already been set in the LORA / PEFT examples
+        kwargs["output_hidden_states"] = (
+            True  # this had already been set in the LORA / PEFT examples
+        )
         kwargs["past_key_values"] = past_key_values
 
-        if self.is_peft_model and self.pretrained_model.active_peft_config.peft_type == "PREFIX_TUNING":
+        if (
+            self.is_peft_model
+            and self.pretrained_model.active_peft_config.peft_type == "PREFIX_TUNING"
+        ):
             kwargs.pop("past_key_values")
 
         base_model_output = self.pretrained_model(
@@ -157,10 +169,10 @@ class SkyworkPRMModel(PreTrainedModelWrapper):
         if last_hidden_state.device != self.v_head.summary.weight.device:
             last_hidden_state = last_hidden_state.to(self.v_head.summary.weight.device)
 
-        value = self.v_head(last_hidden_state).squeeze(-1) # logits_diff
+        value = self.v_head(last_hidden_state).squeeze(-1)  # logits_diff
 
         if return_probs:
-            value = torch.nn.functional.sigmoid(value) # convert logits_diff_to_Probs
+            value = torch.nn.functional.sigmoid(value)  # convert logits_diff_to_Probs
 
         # force upcast in fp32 if logits are in half-precision
         if lm_logits.dtype != torch.float32:
@@ -191,7 +203,9 @@ class SkyworkPRMModel(PreTrainedModelWrapper):
         to the state dictionary of the wrapped model by prepending the key with `v_head.`.
         """
         if not self.is_peft_model:
-            pretrained_model_state_dict = self.pretrained_model.state_dict(*args, **kwargs)
+            pretrained_model_state_dict = self.pretrained_model.state_dict(
+                *args, **kwargs
+            )
         else:
             # if it is a peft model, only save the v_head
             pretrained_model_state_dict = {}
@@ -244,4 +258,3 @@ class SkyworkPRMModel(PreTrainedModelWrapper):
             self.register_forward_hook(set_device_hook)
 
             self.is_sequential_parallel = True
-
