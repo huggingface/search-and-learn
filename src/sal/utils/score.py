@@ -22,7 +22,6 @@ from tqdm import tqdm
 
 from sal.config import Config
 from sal.utils.math import (
-    aggregate_scores,
     compute_maj_pred,
     compute_naive_pred,
     compute_weighted_pred,

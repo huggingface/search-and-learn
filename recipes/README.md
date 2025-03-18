@@ -73,6 +73,23 @@ python scripts/test_time_compute.py $CONFIG \
     --dataset_split=train
 ```
 
+Moreover, to override the choice of PRM, include it in the command line arguments as follows:
+
+```shell
+# Define variables
+export CONFIG=recipes/Qwen2.5-1.5B-Instruct/best_of_n.yaml
+export PRM=Skywork/Skywork-o1-Open-PRM-Qwen-2.5-1.5B
+
+# Run test-time compute
+python scripts/test_time_compute.py $CONFIG --prm_path=$PRM
+```
+
+> Currently supported PRMs: <br>
+`RLHFlow/Llama3.1-8B-PRM-Deepseek-Data` (default) <br>
+`peiyi9979/math-shepherd-mistral-7b-prm`<br>
+`Skywork/Skywork-o1-Open-PRM-Qwen-2.5-1.5B`<br>
+`Skywork/Skywork-o1-Open-PRM-Qwen-2.5-7B`
+
 ## Replicating the blog post results
 
 To replicate the results from our blog post, there are two main steps:

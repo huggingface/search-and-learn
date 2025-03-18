@@ -24,6 +24,12 @@ from transformers import (
 )
 
 from sal.config import Config
+from sal.models.skywork_o1_prm.io_utils import (
+    derive_step_rewards,
+    prepare_batch_input_for_model,
+    prepare_input,
+)
+from sal.models.skywork_o1_prm.prm_model import SkyworkPRMModel
 
 CANDIDATE_TOKENS = [648, 387]
 STEP_TAG_ID = 12902
@@ -271,11 +277,80 @@ class RLHFFlow(PRM):
         return reshaped_output_scores
 
 
+class SkyworkO1(PRM):
+    @classmethod
+    def _load_model_and_tokenizer(
+        cls, prm_model_path, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        tokenizer = AutoTokenizer.from_pretrained(
+            prm_model_path, trust_remote_code=True
+        )
+        model = SkyworkPRMModel.from_pretrained(
+            prm_model_path,
+            device_map="auto",
+            torch_dtype=torch.bfloat16,
+            **model_kwargs,
+        ).eval()
+
+        return model, tokenizer
+
+    def score(
+        self, questions: list[str], outputs: list[list[str]]
+    ) -> list[list[float]]:
+        # reference code: https://huggingface.co/Skywork/Skywork-o1-Open-PRM-Qwen-2.5-7B#huggingface-inference
+        all_scores = []
+        for question, answers in zip(questions, outputs):
+            processed_data = [
+                prepare_input(
+                    question, answer, tokenizer=self.tokenizer, step_token="\n"
+                )
+                for answer in answers
+            ]
+            input_ids, steps, reward_flags = zip(*processed_data)
+            input_ids, attention_mask, reward_flags = prepare_batch_input_for_model(
+                input_ids, reward_flags, self.tokenizer.pad_token_id
+            )
+            device = self.model.pretrained_model.device
+            with torch.no_grad():
+                _, _, rewards = self.model(
+                    input_ids=input_ids.to(device),
+                    attention_mask=attention_mask.to(device),
+                    return_probs=True,
+                )
+                all_step_scores = derive_step_rewards(
+                    rewards.detach().to("cpu", dtype=torch.float32), reward_flags
+                )
+            all_scores.append(all_step_scores)
+        return all_scores
+
+
+class SkyworkO1_1_5B(SkyworkO1):
+    def load_model_and_tokenizer(
+        self, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        prm_model_path = "Skywork/Skywork-o1-Open-PRM-Qwen-2.5-1.5B"
+        return SkyworkO1._load_model_and_tokenizer(prm_model_path, **model_kwargs)
+
+
+class SkyworkO1_7B(SkyworkO1):
+    def load_model_and_tokenizer(
+        self, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        prm_model_path = "Skywork/Skywork-o1-Open-PRM-Qwen-2.5-7B"
+        return SkyworkO1._load_model_and_tokenizer(prm_model_path, **model_kwargs)
+
+
 def load_prm(config: Config) -> PRM:
     if config.prm_path == "peiyi9979/math-shepherd-mistral-7b-prm":
         return MathShepherd(config)
 
     if config.prm_path == "RLHFlow/Llama3.1-8B-PRM-Deepseek-Data":
         return RLHFFlow(config)
+
+    if config.prm_path == "Skywork/Skywork-o1-Open-PRM-Qwen-2.5-1.5B":
+        return SkyworkO1_1_5B(config)
+
+    if config.prm_path == "Skywork/Skywork-o1-Open-PRM-Qwen-2.5-7B":
+        return SkyworkO1_7B(config)
 
     raise NotImplementedError(f"PRM {config.prm_path} not implemented")
