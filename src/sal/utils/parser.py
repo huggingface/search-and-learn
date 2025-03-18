@@ -43,10 +43,17 @@ class H4ArgumentParser(HfArgumentParser):
 
         outputs = []
         # strip other args list into dict of key-value pairs
-        other_args = {
-            arg.split("=")[0].strip("-"): arg.split("=")[1] for arg in other_args
-        }
-        used_args = {}
+        other_args_parsed = {}
+        for arg in other_args:
+            values = arg.split("=")
+            if len(values) == 1:
+                arg = values[0]  # a boolean value, like --push-to-hub
+                value = "True"
+            else:
+                arg, value = values
+            other_args_parsed[arg.strip("-")] = value
+        other_args = other_args_parsed
+        del other_args_parsed
 
         # overwrite the default/loaded value with the value provided to the command line
         # adapted from https://github.com/huggingface/transformers/blob/d0b5002378daabf62769159add3e7d66d3f83c3b/src/transformers/hf_argparser.py#L327

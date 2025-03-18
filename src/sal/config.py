@@ -68,6 +68,9 @@ class Config:
     filter_duplicates: bool = False
     sort_completed: bool = False
 
+    # PRM related options
+    separator: str = "\n\n"
+
     def __post_init__(self):
         if self.approach == "dvts":
             if self.n % self.beam_width != 0:
