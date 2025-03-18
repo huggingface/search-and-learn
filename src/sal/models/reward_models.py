@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from itertools import accumulate
 
-import tqdm
+from tqdm import tqdm
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -24,6 +25,7 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizer,
 )
+
 
 from sal.config import Config
 from sal.models.skywork_o1_prm.io_utils import (
@@ -366,18 +368,14 @@ class TRLPRM(PRM):
         self, questions: list[str], outputs: list[list[str]]
     ) -> list[list[float]]:
 
-        inputs_for_prm = []
-        for question, output in zip(questions, outputs):
-            # Split using \n\n here as that's what we asked the model to use to split the steps
-            for answer in output:
-                inputs_for_prm.append(
-                    Example(
-                        problem=question,
-                        steps=answer.split("\n\n"),
-                        sep=self.search_config.separator
-                    )
-                )
-
+        inputs_for_prm = [
+            Example(
+                problem=question,
+                steps=answers,
+                sep=self.search_config.separator
+            )
+            for question, answers in zip(questions, outputs)
+        ]
         batch_processor = BatchProcessor(inputs_for_prm, self.search_config.prm_batch_size)
         processed_data = {}
 
@@ -422,6 +420,7 @@ class TRLPRM(PRM):
             reshaped_output_scores.append(scores)
 
         return reshaped_output_scores
+
 
 
 def load_prm(config: Config) -> PRM:
