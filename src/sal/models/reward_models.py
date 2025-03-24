@@ -15,8 +15,8 @@
 
 from itertools import accumulate
 
-from tqdm import tqdm
 import torch
+from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForTokenClassification,
@@ -25,7 +25,6 @@ from transformers import (
     PreTrainedTokenizer,
 )
 
-
 from sal.config import Config
 from sal.models.skywork_o1_prm.io_utils import (
     derive_step_rewards,
@@ -33,7 +32,7 @@ from sal.models.skywork_o1_prm.io_utils import (
     prepare_input,
 )
 from sal.models.skywork_o1_prm.prm_model import SkyworkPRMModel
-from sal.models.utils import BatchProcessor, process_results, Example
+from sal.models.utils import BatchProcessor, Example, process_results
 
 CANDIDATE_TOKENS = [648, 387]
 STEP_TAG_ID = 12902
@@ -135,9 +134,9 @@ class MathShepherd(PRM):
 
         # stripped_output_scores = [] TODO: strip out the reward for previous steps
         for output_score, output in zip(output_scores, outputs):
-            assert len(output_score) == len(
-                output
-            ), f"{len(output_score)} != {len(output)}"
+            assert len(output_score) == len(output), (
+                f"{len(output_score)} != {len(output)}"
+            )
 
         return output_scores
 
@@ -350,10 +349,10 @@ class TRLPRM(PRM):
     def load_model_and_tokenizer(
         self, **model_kwargs
     ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
-        tokenizer = AutoTokenizer.from_pretrained(
-            self.search_config.prm_path
+        tokenizer = AutoTokenizer.from_pretrained(self.search_config.prm_path)
+        tokenizer.padding_side = (
+            "left"  # To extract the predicted token as the last token of the right
         )
-        tokenizer.padding_side = "left"  # To extract the predicted token as the last token of the right
         model = AutoModelForTokenClassification.from_pretrained(
             self.search_config.prm_path,
             device_map="auto",
@@ -366,16 +365,13 @@ class TRLPRM(PRM):
     def score(
         self, questions: list[str], outputs: list[list[str]]
     ) -> list[list[float]]:
-
         inputs_for_prm = [
-            Example(
-                problem=question,
-                steps=answers,
-                sep=self.search_config.separator
-            )
+            Example(problem=question, steps=answers, sep=self.search_config.separator)
             for question, answers in zip(questions, outputs)
         ]
-        batch_processor = BatchProcessor(inputs_for_prm, self.search_config.prm_batch_size)
+        batch_processor = BatchProcessor(
+            inputs_for_prm, self.search_config.prm_batch_size
+        )
         processed_data = {}
 
         for batch_steps, batch_indices in tqdm(
@@ -386,9 +382,7 @@ class TRLPRM(PRM):
             with torch.no_grad():
                 # batch_steps = ['Let $a,$ $b,$ and $c$ be positive real numbers.  Find the set of all possible values of\n\\[\\frac{c}{a} + \\frac{a}{b + c} + \\frac{b}{c}.\\]\n\nThis problem involves finding the range of an expression involving three variables.', 'Let $a,$ $b,$ and $c$ be positive real numbers.  Find the set of all possible values of\n\\[\\frac{c}{a} + \\frac{a}{b + c} + \\frac{b}{c}.\\]\n\nThis problem involves finding the range of an expression involving three variables.\n\nOne possible strategy is to try to eliminate some variables and write the expression in terms of one variable only.']
                 tokenized_batch = self.tokenizer(
-                    batch_steps,
-                    padding=True,
-                    return_tensors="pt"
+                    batch_steps, padding=True, return_tensors="pt"
                 ).to(self.model.device)
                 # Get model outputs
                 batched_outputs = self.model(**tokenized_batch)
@@ -396,7 +390,7 @@ class TRLPRM(PRM):
                 # to the TRUE class (LABEL_1, which is the first class)
                 scores = batched_outputs.logits.softmax(dim=-1)[:, :, 0]
                 # The probabilities for the batch can be extracted by finding the prob
-                # of the last token, which should correspond to the 
+                # of the last token, which should correspond to the
                 probs = scores[:, -1].tolist()  # To extract them from cuda
                 # batched_outputs = self.pipeline(batch_steps)
 
@@ -419,7 +413,6 @@ class TRLPRM(PRM):
             reshaped_output_scores.append(scores)
 
         return reshaped_output_scores
-
 
 
 def load_prm(config: Config) -> PRM:

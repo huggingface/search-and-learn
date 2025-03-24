@@ -16,6 +16,7 @@
 from dataclasses import dataclass
 from functools import cached_property
 
+
 @dataclass
 class Example:
     problem: str
@@ -25,7 +26,7 @@ class Example:
     @cached_property
     def get_texts(self):
         """Returns the lists with each problem and solution steps concatenated
-        with the separator. 
+        with the separator.
         """
         return [
             self.sep.join((self.problem, *self.steps[:i])) + self.sep
@@ -38,6 +39,7 @@ class BatchProcessor:
     problem and solutions steps. It allows assigning back the steps of the errors at the
     end by finding the corresponding index of the problems in the batches.
     """
+
     def __init__(self, data: list[Example], batch_size: int = 32):
         self.data = data
         self.batch_size = batch_size
@@ -84,7 +86,7 @@ class BatchProcessor:
 def process_results(
     results: list[dict[str, bool | str | int]],
     batch_indices: list[tuple[int, int]],
-    processed_data: dict[int, list[dict[str, str | float | int]]]
+    processed_data: dict[int, list[dict[str, str | float | int]]],
 ) -> None:
     """
     Assign results back to the original dataset structure.
