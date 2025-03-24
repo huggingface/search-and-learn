@@ -1,0 +1,13 @@
+# refer to src/sal/config.py for more options
+
+approach: best_of_n
+n: 32
+search_batch_size: 25
+sort_completed: true
+filter_duplicates: true
+# num_samples: 5         # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
+seed: 0
+system_prompt: "Solve the following math problem efficiently and clearly:\n\n- For simple problems (2 steps or fewer):\nProvide a concise solution with minimal explanation.\n\n- For complex problems (3 steps or more):\nUse this step-by-step format:\n\n[Concise description]\n[Brief explanation and calculations]\n\n[Concise description]\n[Brief explanation and calculations]\n\n...\n\nRegardless of the approach, always conclude with:\n\nTherefore, the final answer is: $\\boxed{answer}$. I hope it is correct.\n\nWhere [answer] is just the final number or expression that solves the problem."
+prm_path: "HuggingFaceH4/Qwen2.5-Math-1.5B-Instruct-PRM-0.2"
+overwrite_hub_revision: true  # While testing the new PRM model
+prm_batch_size: 32

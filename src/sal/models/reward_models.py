@@ -16,8 +16,10 @@
 from itertools import accumulate
 
 import torch
+from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
+    AutoModelForTokenClassification,
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
@@ -30,9 +32,12 @@ from sal.models.skywork_o1_prm.io_utils import (
     prepare_input,
 )
 from sal.models.skywork_o1_prm.prm_model import SkyworkPRMModel
+from sal.models.utils import BatchProcessor, Example, process_results
 
 CANDIDATE_TOKENS = [648, 387]
 STEP_TAG_ID = 12902
+LABEL_MAP = {"LABEL_0": False, "LABEL_1": True}
+LABEL_FOR_TRUE = "LABEL_1"
 
 
 def batched_math_shepherd_inference(
@@ -129,9 +134,9 @@ class MathShepherd(PRM):
 
         # stripped_output_scores = [] TODO: strip out the reward for previous steps
         for output_score, output in zip(output_scores, outputs):
-            assert len(output_score) == len(
-                output
-            ), f"{len(output_score)} != {len(output)}"
+            assert len(output_score) == len(output), (
+                f"{len(output_score)} != {len(output)}"
+            )
 
         return output_scores
 
@@ -340,6 +345,76 @@ class SkyworkO1_7B(SkyworkO1):
         return SkyworkO1._load_model_and_tokenizer(prm_model_path, **model_kwargs)
 
 
+class TRLPRM(PRM):
+    def load_model_and_tokenizer(
+        self, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        tokenizer = AutoTokenizer.from_pretrained(self.search_config.prm_path)
+        tokenizer.padding_side = (
+            "left"  # To extract the predicted token as the last token of the right
+        )
+        model = AutoModelForTokenClassification.from_pretrained(
+            self.search_config.prm_path,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            **model_kwargs,
+        ).eval()
+
+        return model, tokenizer
+
+    def score(
+        self, questions: list[str], outputs: list[list[str]]
+    ) -> list[list[float]]:
+        inputs_for_prm = [
+            Example(problem=question, steps=answers, sep=self.search_config.separator)
+            for question, answers in zip(questions, outputs)
+        ]
+        batch_processor = BatchProcessor(
+            inputs_for_prm, self.search_config.prm_batch_size
+        )
+        processed_data = {}
+
+        for batch_steps, batch_indices in tqdm(
+            batch_processor,
+            total=batch_processor.get_total_batches(),
+            desc="PRM Inference...",
+        ):
+            with torch.no_grad():
+                # batch_steps = ['Let $a,$ $b,$ and $c$ be positive real numbers.  Find the set of all possible values of\n\\[\\frac{c}{a} + \\frac{a}{b + c} + \\frac{b}{c}.\\]\n\nThis problem involves finding the range of an expression involving three variables.', 'Let $a,$ $b,$ and $c$ be positive real numbers.  Find the set of all possible values of\n\\[\\frac{c}{a} + \\frac{a}{b + c} + \\frac{b}{c}.\\]\n\nThis problem involves finding the range of an expression involving three variables.\n\nOne possible strategy is to try to eliminate some variables and write the expression in terms of one variable only.']
+                tokenized_batch = self.tokenizer(
+                    batch_steps, padding=True, return_tensors="pt"
+                ).to(self.model.device)
+                # Get model outputs
+                batched_outputs = self.model(**tokenized_batch)
+                # Transform to probabilities, and extract the ones corresponding
+                # to the TRUE class (LABEL_1, which is the first class)
+                scores = batched_outputs.logits.softmax(dim=-1)[:, :, 0]
+                # The probabilities for the batch can be extracted by finding the prob
+                # of the last token, which should correspond to the
+                probs = scores[:, -1].tolist()  # To extract them from cuda
+                # batched_outputs = self.pipeline(batch_steps)
+
+            # Assign results back to original structure
+            process_results(probs, batch_indices, processed_data)
+            # process_results(batched_outputs, batch_indices, processed_data)
+            # Clear GPU memory
+            del batch_steps, batched_outputs, scores, probs
+            torch.cuda.empty_cache()
+
+        # The "processed_data" comes sorted as a dict with the index, and the different
+        # scores. Now we group each group of answers to its N.
+        reshaped_output_scores = []
+        counter = 0
+        for _, answers in zip(questions, outputs):
+            scores = []
+            for _ in answers:
+                scores.append(processed_data[counter])
+                counter += 1
+            reshaped_output_scores.append(scores)
+
+        return reshaped_output_scores
+
+
 def load_prm(config: Config) -> PRM:
     if config.prm_path == "peiyi9979/math-shepherd-mistral-7b-prm":
         return MathShepherd(config)
@@ -352,5 +427,8 @@ def load_prm(config: Config) -> PRM:
 
     if config.prm_path == "Skywork/Skywork-o1-Open-PRM-Qwen-2.5-7B":
         return SkyworkO1_7B(config)
+
+    if config.prm_path.startswith("HuggingFaceH4"):
+        return TRLPRM(config)
 
     raise NotImplementedError(f"PRM {config.prm_path} not implemented")
