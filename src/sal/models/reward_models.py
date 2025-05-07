@@ -16,20 +16,14 @@
 from itertools import accumulate
 
 import torch
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    PreTrainedModel,
-    PreTrainedTokenizer,
-    AutoModel,
-)
 import torch.nn.functional as F
+from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
+                          PreTrainedModel, PreTrainedTokenizer)
+
 from sal.config import Config
-from sal.models.skywork_o1_prm.io_utils import (
-    derive_step_rewards,
-    prepare_batch_input_for_model,
-    prepare_input,
-)
+from sal.models.skywork_o1_prm.io_utils import (derive_step_rewards,
+                                                prepare_batch_input_for_model,
+                                                prepare_input)
 from sal.models.skywork_o1_prm.prm_model import SkyworkPRMModel
 
 CANDIDATE_TOKENS = [648, 387]
