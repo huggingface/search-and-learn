@@ -1,0 +1,11 @@
+# refer to src/sal/config.py for more options
+
+model_path: Qwen/Qwen2.5-7B-Instruct
+prm_path: HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2
+custom_chat_template: null
+filter_duplicates: true
+approach: beam_search
+n: 4
+search_batch_size: 1  # DO NOT CHANGE!
+num_samples: 10       # REMOVE THIS LINE TO RUN ON THE WHOLE DATASET
+seed: 0
