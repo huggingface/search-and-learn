@@ -23,6 +23,7 @@ from transformers import (
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
+    AutoModelForTokenClassification,
 )
 
 from sal.config import Config
@@ -399,6 +400,55 @@ class Qwen_2_5_Math(PRM):
 
         return all_scores_res
 
+class H4PRM(PRM):
+    @classmethod
+    def _load_model_and_tokenizer(
+        cls, prm_model_path, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        tokenizer = AutoTokenizer.from_pretrained(prm_model_path)
+        tokenizer.padding_side = "left" 
+        model = AutoModelForTokenClassification.from_pretrained(
+            prm_model_path,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            **model_kwargs,
+        ).eval()
+        return model, tokenizer
+
+    def score(
+        self, questions: list[str], outputs: list[list[str]]
+    ) -> list[list[float]]:
+        separator = "\n\n"
+        all_scores = []
+        for question, answers in zip(questions, outputs):
+            answer_scores = []
+            for answer in answers:
+                steps = answer.split(separator)
+                step_scores = []
+                for idx in range(1, len(steps) + 1):
+                    text = separator.join([question] + steps[:idx]) + separator
+                    inputs = self.tokenizer(
+                        text,
+                        return_tensors="pt",
+                        truncation=True,
+                        padding=True,
+                    ).to(self.model.device)
+
+                    with torch.no_grad():
+                        outputs = self.model(**inputs)
+                        logits = outputs.logits
+
+                    last_token_logits = logits[0, -1]
+                    predicted_label_id = torch.argmax(last_token_logits).item()
+                    predicted_label = self.model.config.id2label[predicted_label_id]
+
+                    score = 1.0 if predicted_label == "LABEL_1" else 0.0
+                    step_scores.append(score)
+                answer_scores.append(step_scores)
+        
+            all_scores.append(answer_scores)
+
+        return all_scores
 
 class SkyworkO1_1_5B(SkyworkO1):
     def load_model_and_tokenizer(
@@ -423,6 +473,13 @@ class Qwen_2_5_Math_7B(Qwen_2_5_Math):
         prm_model_path = "Qwen/Qwen2.5-Math-PRM-7B"
         return Qwen_2_5_Math._load_model_and_tokenizer(prm_model_path, **model_kwargs)
 
+class H4_Qwen_2_5_Math_7B(H4PRM):
+    def load_model_and_tokenizer(
+        self, **model_kwargs
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+        prm_model_path = "HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2"
+        return H4PRM._load_model_and_tokenizer(prm_model_path, **model_kwargs)
+
 
 def load_prm(config: Config) -> PRM:
     if config.prm_path == "peiyi9979/math-shepherd-mistral-7b-prm":
@@ -439,5 +496,8 @@ def load_prm(config: Config) -> PRM:
 
     if config.prm_path == "Qwen/Qwen2.5-Math-PRM-7B":
         return Qwen_2_5_Math_7B(config)
+
+    if config.prm_path == "HuggingFaceH4/Qwen2.5-Math-7B-Instruct-PRM-0.2":
+        return H4_Qwen_2_5_Math_7B(config)
 
     raise NotImplementedError(f"PRM {config.prm_path} not implemented")
